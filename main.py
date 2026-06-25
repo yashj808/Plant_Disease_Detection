@@ -78,7 +78,34 @@ Welcome to the Plant Disease Recognition System! 🌿🔍
 Upload an image of a plant leaf, and our system will analyze it to detect potential diseases.
 """)
 
-test_image = st.file_uploader("Choose an Image:")
+# Limit uploads to images only
+test_image = st.file_uploader("Choose an Image:", type=["jpg", "jpeg", "png"])
+if test_image is not None:
+    # Programmatically validate image size (5MB max) to protect memory
+    MAX_FILE_SIZE_MB = 5
+    if test_image.size > MAX_FILE_SIZE_MB * 1024 * 1024:
+        st.error(f"Security Alert: Uploaded file size exceeds the maximum limit of {MAX_FILE_SIZE_MB}MB.")
+        test_image = None
+    else:
+        # Programmatically validate image integrity using PIL
+        from PIL import Image
+        import io
+        try:
+            img_bytes = test_image.getvalue()
+            img = Image.open(io.BytesIO(img_bytes))
+            img.verify()  # Verifies the file is not corrupted/malformed
+            
+            # Reopen to check format since verify() invalidates the file pointer
+            img = Image.open(io.BytesIO(img_bytes))
+            if img.format not in ["JPEG", "PNG"]:
+                st.error("Security Alert: Only valid JPEG and PNG image files are allowed.")
+                test_image = None
+            else:
+                # Reset the internal stream pointer to allow model reading later
+                test_image.seek(0)
+        except Exception:
+            st.error("Security Alert: Invalid, corrupted, or spoofed image file.")
+            test_image = None
 
 if test_image is not None:
     if st.button("Show Image"):
