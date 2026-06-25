@@ -1,12 +1,31 @@
 import streamlit as st
 import tensorflow as tf
 import numpy as np
+import asyncio
+import sys
+
+# Patch for Windows + Python 3.12 + Streamlit event loop issues
+if sys.platform == 'win32':
+    try:
+        from asyncio import WindowsSelectorEventLoopPolicy
+    except ImportError:
+        pass
+    else:
+        if not isinstance(asyncio.get_event_loop_policy(), WindowsSelectorEventLoopPolicy):
+            asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
+
+# Optional: Handle nested event loops if nest_asyncio is installed
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except ImportError:
+    pass
 
 # Handle Keras 3 vs 2 compatibility
 try:
     import tf_keras as keras
 except ImportError:
-    from tensorflow import keras
+    import tensorflow.keras as keras
 
 # Tensorflow Model Prediction
 @st.cache_resource
@@ -18,9 +37,10 @@ def load_model():
             # compile=False often fixes loading issues when we only need inference
             return keras.models.load_model(path, compile=False)
         except Exception as e:
-            st.warning(f"Failed to load {path}: {e}")
+            # Secure model loading logging: write to stderr, do not display internal paths/tracebacks in UI
+            sys.stderr.write(f"System Log - Warning: Failed to load {path}: {e}\n")
             continue
-    st.error("Could not load any model file. Please check if they exist.")
+    sys.stderr.write("System Log - Error: Could not load any model file.\n")
     return None
 
 def model_prediction(test_image):
@@ -59,6 +79,7 @@ Upload an image of a plant leaf, and our system will analyze it to detect potent
 """)
 
 test_image = st.file_uploader("Choose an Image:")
+
 if test_image is not None:
     if st.button("Show Image"):
         st.image(test_image, use_container_width=True)
