@@ -4,23 +4,26 @@ An AI-powered web application that identifies 38 different classes of plant dise
 
 ## Features
 - **38 Disease Classes:** Covers a wide range of crops including Apple, Corn, Grape, Potato, Tomato, and more.
-- **Accurate Predictions:** Uses state-of-the-art Deep Learning models.
-- **User-Friendly Dashboard:** Simple sidebar navigation for Home, About, and Disease Recognition.
-- **Real-time Feedback:** Provides confidence scores for each prediction.
+- **Accurate Predictions:** Uses pre-trained Deep Learning models (using `trained_model.h5`).
+- **User-Friendly Dashboard:** Simple navigation and leaf analysis interface.
+- **Real-time Feedback:** Shows the top matching prediction and details the confidence scores.
+- **Security Hardened:** Implements robust client/server protections against common vulnerabilities.
 
-## How to Run locally
+## How to Run Locally
 
-### 1. Clone the repository
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/your-username/plant-disease-detection.git
 cd plant-disease-detection
 ```
 
-### 2. Set up a Virtual Environment (Optional but Recommended)
+### 2. Set up a Virtual Environment
 ```bash
 python -m venv venv
-# On Windows:
-venv\Scripts\activate
+
+# On Windows (Command Prompt / PowerShell):
+.\venv\Scripts\activate
+
 # On Linux/macOS:
 source venv/bin/activate
 ```
@@ -35,22 +38,32 @@ pip install -r requirements.txt
 streamlit run main.py
 ```
 
-## Dataset Information
-This project utilizes a dataset of approximately 87K RGB images of healthy and diseased crop leaves, categorized into 38 different classes. The dataset is split into training (80%) and validation (20%) sets.
+## Security Controls Implemented
+
+The application has been hardened to prevent unauthorized access, info disclosure, and Denial of Service (DoS) attacks:
+
+1. **File Upload Restrictions**:
+   - Enforced file extensions to only accept **`.jpg`**, **`.jpeg`**, and **`.png`**.
+   - Maximum upload file size limited to **`5MB`** both programmatically and at the Streamlit server level (via `config.toml`) to prevent memory exhaustion / DoS attacks.
+2. **File Validation**:
+   - Every uploaded image is verified via `PIL.Image.open()` and `img.verify()` to confirm that it is a valid, uncorrupted image and not a disguised or spoofed script file.
+3. **Information Disclosure Prevention**:
+   - Configuration `client.showErrorDetails = false` is active, suppressing Python tracebacks or model filepaths in the user interface during errors.
+   - Internal loading errors or prediction issues are outputted to `sys.stderr` for server administrators instead of being displayed in the web dashboard.
+4. **Server Protections**:
+   - CORS is disabled (`server.enableCORS = false`).
+   - XSRF Protection is enabled (`server.enableXsrfProtection = true`).
+   - File watcher is turned off (`server.fileWatcherType = "none"`) to minimize CPU/file locking overhead and remove exposure paths.
+
+## Model Compatibility
+- **Primary Model**: `trained_model.h5` is the active, verified model file. It is fully compatible with TensorFlow 2.21+ / Keras.
+- **Secondary Model Note**: `trained_model.keras` contains a layer variable expectation mismatch with modern Keras 3 and is kept as a backup, but the application automatically handles and falls back safely to `trained_model.h5`.
 
 ## Technologies Used
-- **Python**
-- **Streamlit** (Web UI)
-- **TensorFlow / Keras** (Deep Learning)
-- **NumPy & Pillow** (Image Processing)
-
-## Project Structure
-- `main.py`: The main Streamlit application script.
-- `trained_model.h5` / `trained_model.keras`: Pre-trained models.
-- `requirements.txt`: List of required Python packages.
-- `Train_plant_disease.ipynb`: Notebook for model training.
-- `Test_plant_disease.ipynb`: Notebook for model testing.
-- `home_page.jpeg`: Application landing page image.
+- **Python 3.12+**
+- **Streamlit** (Web UI & application server)
+- **TensorFlow / Keras** (Deep learning inference)
+- **NumPy & Pillow** (Image processing & validation)
 
 ---
 *Created with ❤️ to help farmers and gardeners protect their crops.*
